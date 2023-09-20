@@ -98,6 +98,8 @@ def get_infection_probas_mean_field(probas, transmissions):
     - transmissions = csr sparse matrix of i, j, lambda_ij(t)
     - infection_probas[i]  = sum_j lambda_ij P_I^j(t)
     """
+    #we assume to know the contacts of infected people
+    #technically we don't know the contacts, but probas vector is not null only if infected
     infection_probas = transmissions.dot(probas[:, 1])
     return infection_probas
 
@@ -292,6 +294,7 @@ class MeanField(BaseInference):
             obs for obs in observations
             if obs.get("being_infected") and obs["s"]==1
         ]
+        #backtrack the contacts of being_infected people
         for obs in being_infected:
             obs["L"] = sum_transmissions(
                 obs["i"], obs["t_min"], obs["t_max"], transmissions
@@ -300,7 +303,10 @@ class MeanField(BaseInference):
         for t in range(T):
             if print_every and (t % print_every == 0):
                 print(f"t = {t} / {T}")
+            #change probas based on observations
             reset_probas(t, probas, observations)
+            #change probas infected based on the "being infected by others" rule
+            #neighbors of infected people are more likely to be infected
             reset_being_infected_by_others(t, probas, being_infected)
             infection_probas = get_infection_probas_mean_field(
                 probas[t], transmissions[t]
