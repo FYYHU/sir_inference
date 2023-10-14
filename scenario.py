@@ -66,7 +66,7 @@ def get_obs_counts(observations):
     full_index = pd.MultiIndex.from_product(
         [sources, range(t_max), range(3)], names=["source", "t_test", "s_true"]
     )
-    obs_count = obs_count[full_index].fillna(0)
+    obs_count = obs_count.reindex(full_index, fill_value=0)
     keys = {idx: u for idx, u in enumerate(STATES)}
     obs_count = {
         source: obs_count.loc[source].unstack("s_true").rename(columns=keys)
